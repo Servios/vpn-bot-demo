@@ -1,61 +1,92 @@
-# VPN Admin Bot
+# 🤖 VPN Admin Bot
 
-Telegram-бот для управления VPN-серверами на базе [3x-ui](https://github.com/MHSanaei/3x-ui).
+> Telegram-бот для управления VPN-инфраструктурой на базе [3x-ui](https://github.com/MHSanaei/3x-ui) — написан под реальный продакшн.
 
-## Возможности
+---
 
-- 🔗 Генерация VLESS Reality ссылок для клиентов (с поддержкой Post-Quantum)
-- 👥 Просмотр списка активных пользователей
-- ✅ / ❌ Включение и отключение пользователей
-- 📅 Просмотр дат окончания подписок
-- 💳 Проверка дней до оплаты сервера (Fornex API)
-- 🔄 Автоматический мониторинг срока оплаты (раз в 24ч)
-- 🖥 Поддержка двух серверов
+## ✨ Возможности
 
-## Установка
+| Функция | Описание |
+|---|---|
+| 🔗 Генерация ссылок | VLESS Reality с поддержкой Post-Quantum (pqv) — параметры читаются с сервера динамически |
+| 👥 Список клиентов | Активные пользователи по выбранному серверу |
+| ✅ Включить / ❌ Отключить | Управление доступом клиентов в реальном времени |
+| 📅 Даты окончания | Таблица подписок с датами истечения |
+| 💳 Мониторинг оплаты | Проверка дней до оплаты сервера через Fornex API |
+| 🔄 Авто-мониторинг | Уведомления каждые 24ч если осталось < 5 дней |
+| 🖥 Мультисервер | Поддержка двух VPN-серверов, переключение из меню |
+| 🔔 Клиентский флоу | Уведомление администратора → подтверждение → генерация ссылки → отправка клиенту |
 
-1. Клонируй репозиторий:
+---
+
+## 🛠 Стек
+
+- **Python 3.10+**
+- [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) — синхронный telebot
+- [py3xui](https://github.com/iwatkot/py3xui) — работа с 3x-ui API
+- `asyncio` + `threading` — асинхронные операции внутри синхронного бота
+- `python-dotenv` — конфигурация через `.env`
+- `pytz`, `requests` — таймзоны и HTTP
+
+---
+
+## ⚙️ Установка
+
 ```bash
 git clone https://github.com/Servios/vpn-bot-demo.git
 cd vpn-bot-demo
-```
 
-2. Создай виртуальное окружение и установи зависимости:
-```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install pytelegrambotapi py3xui python-dotenv requests pytz
-```
 
-3. Скопируй `.env.example` в `.env` и заполни переменные:
-```bash
 cp .env.example .env
-```
+# заполни .env своими данными
 
-4. Запусти бота:
-```bash
 nohup venv/bin/python3 link_bot.py >> link_bot.log 2>&1 &
 ```
 
-## Конфигурация
+---
 
-Все настройки задаются через `.env` файл. Смотри `.env.example`.
+## 🔐 Конфигурация
 
-| Переменная | Описание |
-|---|---|
-| `ADMIN_BOT_TOKEN` | Токен админ-бота |
-| `CLIENT_BOT_TOKEN` | Токен клиентского бота |
-| `ALLOWED_IDS` | Telegram ID администраторов через запятую |
-| `XUI_URL_1/2` | URL панели 3x-ui |
-| `XUI_USER_1/2` | Логин 3x-ui |
-| `XUI_PASS_1/2` | Пароль 3x-ui |
-| `SERVER_IP_1/2` | IP-адрес сервера |
-| `SERVER_PORT_1/2` | Порт inbound |
-| `FORNEX_API_KEY` | API-ключ Fornex |
-| `FORNEX_ORDER_URL_1/2` | URL заказа VPS на Fornex |
+Все секреты задаются через `.env`. Смотри [`.env.example`](.env.example).
 
-## Стек
+```env
+ADMIN_BOT_TOKEN=...
+CLIENT_BOT_TOKEN=...
+ALLOWED_IDS=123456789,987654321
 
-- [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI)
-- [py3xui](https://github.com/iwatkot/py3xui)
-- Python 3.10+
+XUI_URL_1=https://your-server:port/path
+XUI_USER_1=admin
+XUI_PASS_1=password
+SERVER_IP_1=1.2.3.4
+SERVER_PORT_1=443
+
+FORNEX_API_KEY=...
+FORNEX_ORDER_URL_1=https://fornex.com/api/orders/vps/your-order/
+```
+
+---
+
+## 🏗 Архитектура
+
+```
+Клиент → client_bot → уведомление в admin_bot
+                              ↓
+                    Выбор сервера (Германия / Нидерланды)
+                              ↓
+                    3x-ui API → создание клиента
+                              ↓
+                    Генерация VLESS ссылки (с pqv из сервера)
+                              ↓
+                    Отправка ссылки клиенту
+```
+
+---
+
+## 👨‍💻 Автор
+
+Разработано **[@bkorolkowww](https://t.me/bkorolkowww)**
+
+По вопросам разработки Telegram-ботов, автоматизации и VPN-инфраструктуры — пишите в личку.

@@ -1,32 +1,67 @@
-# 🤖 VPN Admin Bot
+# 🤖 VPN Telegram Bot System
 
-> Telegram-бот для управления VPN-инфраструктурой на базе [3x-ui](https://github.com/MHSanaei/3x-ui) — написан под реальный продакшн.
+> Система из двух Telegram-ботов для продажи и управления VPN на базе [3x-ui](https://github.com/MHSanaei/3x-ui) — написана под реальный продакшн.
+
+---
+
+## 📦 Состав
+
+| Файл | Роль | Для кого |
+|---|---|---|
+| `client_bot.py` | Клиентский бот — приём заявок, справочник | Покупатели VPN |
+| `link_bot.py` | Админ-бот — управление серверами и клиентами | Администраторы |
 
 ---
 
 ## ✨ Возможности
 
+### 👤 Клиентский бот (`client_bot.py`)
+- Приём заявок на доступ → уведомление администратора
+- Автоматическая балансировка между администраторами (round-robin)
+- Справочник: установка на iOS / Android / Windows, FAQ, поддержка
+- Получение VLESS ссылки после подтверждения оплаты
+
+### 🛠 Админ-бот (`link_bot.py`)
+
 | Функция | Описание |
 |---|---|
-| 🔗 Генерация ссылок | VLESS Reality с поддержкой Post-Quantum (pqv) — параметры читаются с сервера динамически |
+| 🔗 Генерация ссылок | VLESS Reality + Post-Quantum (pqv) — параметры читаются с сервера динамически |
 | 👥 Список клиентов | Активные пользователи по выбранному серверу |
-| ✅ Включить / ❌ Отключить | Управление доступом клиентов в реальном времени |
+| ✅ / ❌ Вкл / Откл | Управление доступом клиентов в реальном времени |
 | 📅 Даты окончания | Таблица подписок с датами истечения |
-| 💳 Мониторинг оплаты | Проверка дней до оплаты сервера через Fornex API |
+| 💳 Мониторинг оплаты | Проверка дней до оплаты VPS через Fornex API |
 | 🔄 Авто-мониторинг | Уведомления каждые 24ч если осталось < 5 дней |
 | 🖥 Мультисервер | Поддержка двух VPN-серверов, переключение из меню |
-| 🔔 Клиентский флоу | Уведомление администратора → подтверждение → генерация ссылки → отправка клиенту |
+
+---
+
+## 🏗 Архитектура флоу
+
+```
+Клиент нажимает «Получить доступ»
+        ↓
+client_bot уведомляет администратора
+        ↓
+Администратор подтверждает оплату
+        ↓
+link_bot выбирает сервер (Германия / Нидерланды)
+        ↓
+3x-ui API → создаёт клиента → читает Reality-параметры
+        ↓
+Генерирует VLESS ссылку с pqv, spx, sni
+        ↓
+client_bot отправляет ссылку покупателю
+```
 
 ---
 
 ## 🛠 Стек
 
 - **Python 3.10+**
-- [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) — синхронный telebot
-- [py3xui](https://github.com/iwatkot/py3xui) — работа с 3x-ui API
-- `asyncio` + `threading` — асинхронные операции внутри синхронного бота
+- [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI) — sync + async telebot
+- [py3xui](https://github.com/iwatkot/py3xui) — работа с 3x-ui панелью
+- `asyncio` + `threading` — асинхронные вызовы внутри синхронного бота
 - `python-dotenv` — конфигурация через `.env`
-- `pytz`, `requests` — таймзоны и HTTP
 
 ---
 
@@ -38,12 +73,20 @@ cd vpn-bot-demo
 
 python3 -m venv venv
 source venv/bin/activate
-pip install pytelegrambotapi py3xui python-dotenv requests pytz
+pip install -r requirements.txt
 
 cp .env.example .env
 # заполни .env своими данными
+```
 
+### Запуск
+
+```bash
+# Админ-бот
 nohup venv/bin/python3 link_bot.py >> link_bot.log 2>&1 &
+
+# Клиентский бот
+nohup venv/bin/python3 client_bot.py >> client_bot.log 2>&1 &
 ```
 
 ---
@@ -63,24 +106,15 @@ XUI_PASS_1=password
 SERVER_IP_1=1.2.3.4
 SERVER_PORT_1=443
 
+XUI_URL_2=https://your-server-2:port/path
+XUI_USER_2=admin
+XUI_PASS_2=password
+SERVER_IP_2=5.6.7.8
+SERVER_PORT_2=32739
+
 FORNEX_API_KEY=...
-FORNEX_ORDER_URL_1=https://fornex.com/api/orders/vps/your-order/
-```
-
----
-
-## 🏗 Архитектура
-
-```
-Клиент → client_bot → уведомление в admin_bot
-                              ↓
-                    Выбор сервера (Германия / Нидерланды)
-                              ↓
-                    3x-ui API → создание клиента
-                              ↓
-                    Генерация VLESS ссылки (с pqv из сервера)
-                              ↓
-                    Отправка ссылки клиенту
+FORNEX_ORDER_URL_1=https://fornex.com/api/orders/vps/xxxxx/
+FORNEX_ORDER_URL_2=https://fornex.com/api/orders/vps/yyyyy/
 ```
 
 ---
